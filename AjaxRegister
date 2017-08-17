@@ -1,0 +1,98 @@
+--注册表单页面
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>login.html</title>
+    <script src="js/jquery-1.8.3.min.js"></script>
+    <script src="js/login.js"></script>
+    <!--<link rel="stylesheet" type="text/css" href="./styles.css">-->
+
+  </head>
+  
+  <body>
+  <form method="post">
+    <h2>注册:</h2>
+    用户名<input type="text" name="name" id="name"><span id="span1"></span><br>
+    密码<input type="password" name="pwd" id="pwd"><span id="span2"></span>
+    <input type="button" value="登录">
+    </form>
+  </body>
+</html>
+--jsAjax页面
+
+$(function(){
+	initEvent();
+})
+
+//注册验证
+function initEvent(){
+	$("#name").bind("change",function(){
+		$.get("servlet/UserServlet?type=getUserByName",{"name":this.value},function(data){
+			
+			if(data==1)
+				$("#span1").html("用户名已存在!不可用");
+			else
+				$("#span1").html("可以使用！");
+		});
+	})
+}
+--servlet处理页面
+public class UserServlet extends HttpServlet {
+	IUserService service=new UserServiceImpl();
+	public void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		request.setCharacterEncoding("utf-8");
+		response.setCharacterEncoding("UTF-8");
+		String type=request.getParameter("type");
+		try {
+			Method mt=UserServlet.class.getMethod(type, HttpServletRequest.class,HttpServletResponse.class);
+			try {
+				mt.invoke(this, request,response);
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		}
+	}
+	public void getUserByName(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException{
+		String name =request.getParameter("name"); 
+		System.out.println(name);
+		if(service.getUserByName(name))
+			response.getWriter().print("1");
+		else
+			response.getWriter().print("2");
+			
+	}
+	public void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		this.doGet(request, response);
+	}
+
+}
+--dao层访问页面
+public class UserDaoImpl implements IUserDao{
+	public boolean getUserByName(String name){
+		String sql="select * from userinfo where name=?";
+		List<Object> list=new ArrayList<Object>();
+		list.add(name);
+		ResultSet rs=DBTools.getReusultSet(sql,list);
+		try {
+			if(rs.next()){
+				return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		finally{
+			DBTools.close();
+		}
+		return false;
+	}
+}
